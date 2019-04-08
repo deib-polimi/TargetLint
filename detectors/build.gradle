@@ -1,0 +1,38 @@
+apply plugin: 'java'
+
+
+
+jar {
+    manifest {
+        attributes(
+                "Class-Path": configurations.compile.collect { it.getName() }.join(' '))
+    }
+}
+
+configurations {
+    lintChecks
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    testImplementation 'junit:junit:4.12'
+    implementation 'com.android.tools.lint:lint:26.0.1'
+    implementation 'com.android.tools.lint:lint-api:26.0.1'
+    implementation 'com.android.tools.lint:lint-checks:26.0.1'
+    implementation project(':TargetLint')
+    lintChecks files(jar)
+}
+
+defaultTasks 'assemble'
+
+task install(type: Copy) {
+    from configurations.lintChecks
+    into System.getProperty('user.home') + '/.android/targetLint/'
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}

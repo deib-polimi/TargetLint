@@ -1,0 +1,44 @@
+apply plugin: 'java'
+
+
+
+jar {
+    manifest {
+        attributes('Lint-Registry': 'com.darkfoxdev.tesi.targetlint.CustomRegistry')
+    }
+}
+
+configurations {
+    lintChecks
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    testImplementation 'junit:junit:4.12'
+    implementation 'com.android.tools.lint:lint:26.0.1'
+    implementation 'com.android.tools.lint:lint-api:26.0.1'
+    implementation 'com.android.tools.lint:lint-checks:26.0.1'
+    lintChecks files(jar)
+
+}
+
+
+
+defaultTasks 'assemble'
+
+javadoc {
+    source = "$buildDir/"
+    include( "**/*.java" )
+}
+
+task install(type: Copy) {
+    from configurations.lintChecks
+    into System.getProperty('user.home') + '/.android/lint/'
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
