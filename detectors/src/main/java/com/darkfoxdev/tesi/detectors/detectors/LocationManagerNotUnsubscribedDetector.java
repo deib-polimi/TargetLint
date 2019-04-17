@@ -43,7 +43,9 @@ public class LocationManagerNotUnsubscribedDetector extends TLDetector {
 
     @Override
     protected void initializer() {
-        TargetFilter f1 = new ExtendsFilter("android.app.Activity") ;
+        TargetFilter f1_1 = new ExtendsFilter("android.app.Activity");
+        TargetFilter f1_2 = new ExtendsFilter("android.support.v4.app.Fragment");
+        TargetFilter f1 = f1_1.or(f1_2);
         TargetFilter f2 = new InstanceOfCallerFilter("android.location.LocationManager");
         TargetFilter f3 = new MethodNameFilter("onDestroy");
         TargetFilter q1 = new CallNameFilter("requestLocationUpdates");

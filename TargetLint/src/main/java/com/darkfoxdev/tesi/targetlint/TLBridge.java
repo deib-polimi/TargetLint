@@ -16,7 +16,7 @@ import java.util.List;
 public class TLBridge {
 
     private static boolean debug = true;
-    private static boolean fileReport = false;
+    private static boolean fileReport = true;
 
     private LintDetectorInterface lintDetector;
     /**
@@ -24,7 +24,10 @@ public class TLBridge {
      */
     public static List<Class<? extends TLDetector>> detectorClasses = new ArrayList<>();
     private List<TLDetector> detectors = new ArrayList<>();
+
     private String projectName = "default";
+
+    private List<ReportFileFormatter> reportFileFormatters = new ArrayList<>();
 
 
     /**
@@ -33,6 +36,10 @@ public class TLBridge {
      * @param lintDetectorInterface the lint detector interface
      */
     public TLBridge(LintDetectorInterface lintDetectorInterface) {
+
+        reportFileFormatters.add(new CSVReportFileFormatter());
+        reportFileFormatters.add(new LatexReportFileFormatter());
+
 
         try {
             String directory = System.getProperty("user.home") + "/.android/targetLint/";
@@ -77,36 +84,16 @@ public class TLBridge {
     }
 
     private void createReportFile (String project) {
-        try {
-            String header = "Issue,Message,Location,Instruction\n";
-            Path file = Paths.get("/Users/Pietro/lintLog/" + project + ".csv");
-            if (Files.exists(file)) {
-                if (Files.lines(file).count() > 1 ) {
-                    Files.delete(file);
-                }
-            }
-            if (!Files.exists(file)) {
-                Files.createFile(file);
-                Files.write(file, header.getBytes(), StandardOpenOption.APPEND);
-            }
-        } catch (Exception e) {
-            log(e.getMessage());
-            log(e.getStackTrace());
-        }
+        reportFileFormatters.forEach(f -> {
+            f.createFile(project);
+            f.createHeader(project);
+        });
     }
 
     private void reportToFile (Match m, TLIssue issue, String message) {
-        try {
-            Path file = Paths.get("/Users/Pietro/lintLog/" + getProjectName() + ".csv");
-            int line = m.getElement().getLocation().getStart().getLine();
-            int column = m.getElement().getLocation().getStart().getColumn();
-            String location = "File: " + m.getElement().getLocation().getFile().getName() + " Line: " + line + " Column: " + column;
-            String log = "\"" + issue.getBriefDescription()  + "\"," + "\""+ message + "\"," + location + ",\"" + m.getElement().getSource() + ",\"\n";
-            Files.write(file, log.getBytes(), StandardOpenOption.APPEND);
-        } catch (Exception e) {
-            log(e.getStackTrace());
-        }
+        reportFileFormatters.forEach(f-> f.createReport(m,issue,message,projectName));
     }
+
 
     /**
      * Gets detectors.
@@ -140,6 +127,7 @@ public class TLBridge {
      */
     public void afterCheckProject() {
         detectors.forEach(d -> d.afterCheckProject());
+        reportFileFormatters.forEach(f -> f.createFooter(projectName));
         this.projectName = "default";
     }
 

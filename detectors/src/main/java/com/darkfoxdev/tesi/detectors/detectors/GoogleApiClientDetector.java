@@ -28,7 +28,7 @@ public class GoogleApiClientDetector extends TLDetector {
      * The constant ISSUE.
      */
     private static final TLIssue ISSUE = new TLIssue("GoogleApiClientLifecycle",
-            "Incorrect `GoogleApiClient` lifecycle handling",
+            "Incorrect GoogleApiClient lifecycle handling",
             "You should always disconnect a GoogleApiClient when you are done with it. "+
                     "For activities and fragments in most cases connection is done during onStart and "+
                     "disconnection during onStop().",
@@ -51,7 +51,9 @@ public class GoogleApiClientDetector extends TLDetector {
     @Override
     protected void initializer() {
 
-        TargetFilter f1 = new ExtendsFilter("android.app.Activity");
+        TargetFilter f1_1 = new ExtendsFilter("android.app.Activity");
+        TargetFilter f1_2 = new ExtendsFilter("android.support.v4.app.Fragment");
+        TargetFilter f1 = f1_1.or(f1_2);
         TargetFilter f2 = new MethodNameFilter("onConnectionFailed");
 
         TargetFilter f5 = new MethodNameFilter("onStart");
@@ -66,12 +68,12 @@ public class GoogleApiClientDetector extends TLDetector {
         Target t1 = createTarget(TargetSearchLevel.FILE,TLCall.class,q1,f1,f2.not(),f3);
         Target t2 = createTarget(TargetSearchLevel.FILE,TLCall.class,q2,f1,f2.not(),f3);
 
-        Target t5 = createTarget(TargetSearchLevel.FILE,TLCall.class,q1,f1.and(f5.not()).or(f1.not()),f2.not(),f3);
-        Target t6 = createTarget(TargetSearchLevel.FILE,TLCall.class,q2,f1.and(f6.not()).or(f1.not()),f2.not(),f3);
+        Target t5 = createTarget(TargetSearchLevel.FILE,TLCall.class,q1,f1.and(f5.not()),(f1),f2.not(),f3);
+        Target t6 = createTarget(TargetSearchLevel.FILE,TLCall.class,q2,f1.and(f6.not()),(f1),f2.not(),f3);
 
 
-        createCheck(t5,"Connection and disconnection should be handled only in Activities, respectively in onStart and onStop methods");
-        createCheck(t6,"Connection and disconnection should be handled only in Activities, respectively in onStart and onStop methods");
+        createCheck(t5,"Connection and disconnection should be handled respectively in onStart and onStop methods");
+        createCheck(t6,"Connection and disconnection should be handled respectively in onStart and onStop methods");
 
 
         Function<Match,String> operation = (Match m) -> {

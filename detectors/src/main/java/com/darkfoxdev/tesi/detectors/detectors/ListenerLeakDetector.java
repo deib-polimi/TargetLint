@@ -5,6 +5,7 @@ import com.darkfoxdev.tesi.targetlint.TLBridge;
 import com.darkfoxdev.tesi.targetlint.TLDetector;
 import com.darkfoxdev.tesi.targetlint.checks.operations.CheckOperation;
 import com.darkfoxdev.tesi.targetlint.checks.operations.ReferenceMatchCheckOperation;
+import com.darkfoxdev.tesi.targetlint.targets.filters.InstructionContainedInBlockFilter;
 import com.darkfoxdev.tesi.targetlint.tlast.TLCall;
 import com.darkfoxdev.tesi.targetlint.tlast.TLElement;
 import com.darkfoxdev.tesi.targetlint.TLIssue;
@@ -18,9 +19,9 @@ import com.darkfoxdev.tesi.targetlint.targets.TargetSearchLevel;
 
 import java.util.function.Function;
 
-public class ActivityLeakDetector extends TLDetector {
+public class ListenerLeakDetector extends TLDetector {
 
-    private static final TLIssue ISSUE = new TLIssue("ActivityLeakDetector",
+    private static final TLIssue ISSUE = new TLIssue("ListenerLeakDetector",
             "Possible memory leak due to retained activity",
             "Holding a reference to an activity could result in memory leaks. " +
                     "For example, once there is a static reference, the Activity will not be garbage collected. " +
@@ -34,7 +35,7 @@ public class ActivityLeakDetector extends TLDetector {
      *
      * @param tlBridge the tl bridge
      */
-    public ActivityLeakDetector(TLBridge tlBridge) {
+    public ListenerLeakDetector(TLBridge tlBridge) {
         super(tlBridge);
     }
 
@@ -45,13 +46,13 @@ public class ActivityLeakDetector extends TLDetector {
 
     @Override
     protected void initializer() {
-
-        TargetFilter f1 = new ExtendsFilter("android.app.Activity");
+        TargetFilter f1_1 = new ExtendsFilter("android.app.Activity");
+        TargetFilter f1_2 = new ExtendsFilter("android.support.v4.app.Fragment");
+        TargetFilter f1_3 = new ExtendsFilter("androidx.fragment.app.Fragment");
+        TargetFilter f1 = f1_1.or(f1_2).or(f1_3);
         TargetFilter f2 = new CallNameFilter("addListener");
-
         TargetFilter f3 = new MethodNameFilter("onDestroy");
         TargetFilter f4 = new CallNameFilter("removeListener");
-
         TargetFilter f5 = new TargetFilter(TargetFilter.FilterType.INSTRUCTION) {
             @Override
             protected boolean calculate(TLElement element) {
@@ -62,22 +63,20 @@ public class ActivityLeakDetector extends TLDetector {
                 return false;
             }
         };
+        TargetFilter f6 = new InstructionContainedInBlockFilter(TLQualified.class);
 
-        Target t1 = createTarget(TargetSearchLevel.FILE, TLCall.class, f1, f2, f5);
-
-        Target t2 = createTarget(TargetSearchLevel.FILE, TLCall.class, f1, f3, f4, f5);
+        Target t1 = createTarget(TargetSearchLevel.FILE, TLCall.class, f1, f2, f5,f6);
+        Target t2 = createTarget(TargetSearchLevel.FILE, TLCall.class, f1, f3, f4, f5,f6);
 
         Function<Match,String> operation = (Match m) -> {
-
             if (m.getElement().getParent() instanceof TLQualified) {
                 return  ((TLQualified)m.getElement().getParent()).getReceiver().getSource();
-
             } return "";
         };
 
         CheckOperation co1 = new ReferenceMatchCheckOperation<>(t2, operation);
-        createCheck(t1, "Methods named addListener usually save a reference of the Activity. " +
-                "In order to prevent memory leaks, it's advised to call removeListener in onDestroy method.", co1.not());
-
+        String message = "Methods named addListener usually save a reference of the Activity. " +
+                "In order to prevent memory leaks, it's advised to call removeListener in onDestroy method.";
+        createCheck(t1, message, co1.not());
     }
 }

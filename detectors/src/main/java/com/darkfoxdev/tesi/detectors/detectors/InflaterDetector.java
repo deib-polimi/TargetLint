@@ -23,11 +23,11 @@ public class InflaterDetector extends TLDetector {
      * The constant ISSUE.
      */
     private static final TLIssue ISSUE = new TLIssue("InflaterLifecycle",
-            "Incorrect `Inflater` lifecycle handling",
+            "Incorrect Inflater lifecycle handling",
             "The root ViewGroup container that will hold your Fragment in your Activity" +
                     " is the ViewGroup parameter given to you in onCreateView() in your Fragment. " +
-                    "It’s also the ViewGroup you pass into LayoutInflater.inflate(). " +
-                    "The FragmentManager will handle attaching your Fragment’s View to this ViewGroup, however." +
+                    "It's also the ViewGroup you pass into LayoutInflater.inflate(). " +
+                    "The FragmentManager will handle attaching your Fragment's View to this ViewGroup, however." +
                     " You do not want to attach it twice. Set attachToRoot to false.",
             "TargetLint",3,5
     );
@@ -48,7 +48,7 @@ public class InflaterDetector extends TLDetector {
 
     protected void initializer() {
 
-        TargetFilter f1 = new ExtendsFilter("android.app.Fragment");
+        TargetFilter f1 = new ExtendsFilter("android.support.v4.app.Fragment");
         TargetFilter f2 = new MethodNameFilter("onCreateView");
         TargetFilter f3 = new CallNameFilter("inflate");
         TargetFilter f4 = new InstanceOfCallerFilter("android.view.LayoutInflater");

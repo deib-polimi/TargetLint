@@ -1,15 +1,25 @@
 package com.darkfoxdev.tesi.targetlint.uast;
 
+import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.LintClient;
+import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.UElementHandler;
+import com.android.tools.lint.client.api.UastParser;
+import com.android.tools.lint.client.api.XmlParser;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.LintFix;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
+import com.darkfoxdev.tesi.targetlint.CustomRegistry;
 import com.darkfoxdev.tesi.targetlint.LintDetectorInterface;
 import com.darkfoxdev.tesi.targetlint.Match;
 import com.darkfoxdev.tesi.targetlint.TLBridge;
@@ -42,6 +52,8 @@ import com.darkfoxdev.tesi.targetlint.tlast.TLWhile;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiType;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.uast.UAnnotation;
 import org.jetbrains.uast.UBinaryExpression;
 import org.jetbrains.uast.UBlockExpression;
@@ -72,7 +84,11 @@ import org.jetbrains.uast.UTryExpression;
 import org.jetbrains.uast.UVariable;
 import org.jetbrains.uast.UWhileExpression;
 import org.jetbrains.uast.UastEmptyExpression;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -119,6 +135,11 @@ public class UastDetector  extends Detector implements Detector.UastScanner, Lin
     public UastDetector() {
         super();
         this.tlBridge = new TLBridge(this);
+    }
+
+    @Override
+    public EnumSet<Scope> getApplicableFiles() {
+        return  EnumSet.of(Scope.JAVA_FILE);
     }
 
     @Override
@@ -248,7 +269,6 @@ public class UastDetector  extends Detector implements Detector.UastScanner, Lin
                 if ((uIfExpression.getElseExpression() != null) && !(uIfExpression.getElseExpression() instanceof UastEmptyExpression)) {
                     location.setSecondary(context.getLocation(uIfExpression.getElseExpression()));
                 }
-
                 createTLIf(uIfExpression,location);
             }
 
@@ -305,7 +325,6 @@ public class UastDetector  extends Detector implements Detector.UastScanner, Lin
                             && !(uElement instanceof UastEmptyExpression)
                             && !(uElement instanceof UBlockExpression)
                             && !(uElement instanceof UExpressionList))  {
-
                             createTLExpression((UExpression) uElement, location);
 
                     }
@@ -605,7 +624,7 @@ public class UastDetector  extends Detector implements Detector.UastScanner, Lin
     @Override
     public void report (TLIssue issue, Match match, String message) {
         if (context != null) {
-            context.report(getIssue(issue), match.getElement().getLocation(), message);
+             context.report(getIssue(issue), match.getElement().getLocation(), message);
         }
     }
 
@@ -615,7 +634,6 @@ public class UastDetector  extends Detector implements Detector.UastScanner, Lin
             logger.warn(message);//TODO
         }
     }
-
 
     /**
      * Log.
@@ -629,7 +647,8 @@ public class UastDetector  extends Detector implements Detector.UastScanner, Lin
     @Override
     public void beforeCheckProject(Context context) {
         this.context = context;
-        tlBridge.beforeCheckProject(context.getProject().getName());
+        String project = context.getProject().getPackage() + "-" + context.getProject().getName();
+        tlBridge.beforeCheckProject(project);
     }
 
     @Override
@@ -647,6 +666,8 @@ public class UastDetector  extends Detector implements Detector.UastScanner, Lin
         parentMap.clear();
         tlBridge.afterCheckFile();
     }
+
+
 
 }
 

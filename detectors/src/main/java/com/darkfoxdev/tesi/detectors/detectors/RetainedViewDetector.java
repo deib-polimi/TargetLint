@@ -6,6 +6,7 @@ import com.darkfoxdev.tesi.targetlint.TLDetector;
 import com.darkfoxdev.tesi.targetlint.checks.operations.CheckOperation;
 import com.darkfoxdev.tesi.targetlint.checks.operations.ReferenceMatchCheckOperation;
 import com.darkfoxdev.tesi.targetlint.tlast.TLAssignment;
+import com.darkfoxdev.tesi.targetlint.tlast.TLElement;
 import com.darkfoxdev.tesi.targetlint.tlast.TLField;
 import com.darkfoxdev.tesi.targetlint.TLIssue;
 import com.darkfoxdev.tesi.targetlint.targets.filters.AssignmentValueFilter;
@@ -16,6 +17,7 @@ import com.darkfoxdev.tesi.targetlint.targets.filters.TypeFilter;
 import com.darkfoxdev.tesi.targetlint.targets.Target;
 import com.darkfoxdev.tesi.targetlint.targets.TargetSearchLevel;
 
+import java.util.List;
 import java.util.function.Function;
 
 public class RetainedViewDetector extends TLDetector {
@@ -45,13 +47,24 @@ public class RetainedViewDetector extends TLDetector {
 
     @Override
     protected void initializer() {
-        TargetFilter f1 = new ExtendsFilter("android.support.v4.app.Fragment") ;
+        TargetFilter f1_1 = new ExtendsFilter("android.support.v4.app.Fragment") ;
+        TargetFilter f1_2 = new ExtendsFilter("androidx.fragment.app.Fragment") ;
+        TargetFilter f1 = f1_1.or(f1_2);
         TargetFilter f2_1 = new TypeFilter("android.view.View");
         TargetFilter f2_2 = new TypeFilter("android.graphics.drawable.Drawable");
         TargetFilter f2_3 = new TypeFilter("android.widget.Adapter");
         TargetFilter f2 =  f2_1.or(f2_2).or(f2_3);
         TargetFilter f3 = new MethodNameFilter("onDestroy");
         TargetFilter q1 = new AssignmentValueFilter("null");
+
+        TargetFilter f4 = new TargetFilter(TargetFilter.FilterType.INSTRUCTION) {
+            @Override
+            protected boolean calculate(TLElement element) {
+                return element.getAnnotations().stream().anyMatch(a -> a.toLowerCase().contains("@bindview"));
+            }
+        };
+
+
         Target t1 = createTarget(TargetSearchLevel.FILE,TLField.class,f2,f1);
         Target t2 = createTarget(TargetSearchLevel.FILE,TLAssignment.class,q1,f1,f2,f3);
 
@@ -62,11 +75,11 @@ public class RetainedViewDetector extends TLDetector {
             } return null;
         };
 
-
-
         CheckOperation co1 = new ReferenceMatchCheckOperation<>(t2,operation);
-        createCheck(t1,"View retaining can introduce memory leakage: " +
-                "consider setting to null in onDestroy() method.",co1.not());
+
+        String message = "View retaining can introduce memory leakage: " +
+                "consider setting to null in onDestroy() method.";
+      //  createCheck(t1,message,f4.not().convertToCheckOperation(),co1.not());
 
     }
 }

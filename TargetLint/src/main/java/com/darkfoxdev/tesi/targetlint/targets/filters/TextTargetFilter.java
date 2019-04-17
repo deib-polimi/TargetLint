@@ -1,5 +1,7 @@
 package com.darkfoxdev.tesi.targetlint.targets.filters;
 
+import com.darkfoxdev.tesi.targetlint.TLBridge;
+
 import java.util.function.Function;
 
 /**
@@ -40,7 +42,7 @@ public abstract class TextTargetFilter extends TargetFilter {
         super(type);
         this.query = query;
         if (mode == Mode.EQUALS) {
-            this.operation = x-> {
+         this.operation = x-> {
                 if (x!=null) {
                  return x.equals(query);
                 } return false;

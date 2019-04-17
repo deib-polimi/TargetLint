@@ -36,7 +36,7 @@ public class CallNameFilter extends TextTargetFilter {
                TLCall expr = (TLCall) element;
                 return operation.apply(expr.getName());
             } catch (Exception e) {
-                TLBridge.log(e.getStackTrace()); //TODO !!!
+             //   TLBridge.log(e.getStackTrace()); //TODO !!!
                 return false;
             }
         } return false;

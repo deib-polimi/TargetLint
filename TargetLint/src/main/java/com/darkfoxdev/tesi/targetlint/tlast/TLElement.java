@@ -77,8 +77,13 @@ public abstract class TLElement  {
      *
      * @return the location string
      */
-    public String getLocationString() {
-        return  "File: " + location.getFile().getName() + "Line: " + location.getStart().getLine() + "Column: " + location.getStart().getColumn();
+    public String getLocationString(boolean withFile) {
+        String locationString = " Line: " + location.getStart().getLine() + " Column: " + location.getStart().getColumn();
+        if (withFile) {
+            return "File: " + location.getFile().getName() + locationString;
+        } else {
+            return locationString;
+        }
     }
 
     /**

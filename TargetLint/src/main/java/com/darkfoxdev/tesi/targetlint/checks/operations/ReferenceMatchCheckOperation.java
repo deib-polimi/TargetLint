@@ -26,7 +26,6 @@ import java.util.function.Function;
 public class ReferenceMatchCheckOperation<T> extends CheckOperation {
 
     private Target t2;
-
     private Function<Match,T> operation;
 
     /**
